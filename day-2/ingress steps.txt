@@ -1,0 +1,77 @@
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+helm repo update
+
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx —create-namespace
+
+kubectl get svc -n ingress-nginx
+
+nslookup ae877f465eda04a29bff2e465319fd33-349824780.us-east-1.elb.amazonaws.com
+
+% cat /etc/hosts
+##
+# Host Database
+#
+# localhost is used to configure the loopback interface
+# when the system is booting.  Do not change this entry.
+##
+127.0.0.1	localhost
+255.255.255.255	broadcasthost
+::1             localhost
+34.194.42.156 prometheus.local grafana.local alertmanager.local
+34.195.86.184 prometheus.local grafana.local alertmanager.local
+
+
+% cat monitoring-ingress.yaml 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ingress
+  namespace: monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: prometheus.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: monitoring-kube-prometheus-prometheus
+            port:
+              number: 9090
+  - host: grafana.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: monitoring-grafana
+            port:
+              number: 80
+  - host: alertmanager.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: monitoring-kube-prometheus-alertmanager
+            port:
+              number: 9093
+
+kubectl apply -f monitoring-ingress.yaml
+
+kubectl get ingress -n monitoring
+
+http://prometheus.local/query
+
+http://grafana.local/login
+
+http://alertmanager.local/#/alerts
+
