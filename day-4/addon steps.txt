@@ -1,0 +1,18 @@
+grep -R "abhishekf5" --include="*.y*ml" .
+
+find . -type f -name "*.y*ml" -exec sed -i '.bak' 's/abhishekf5/ruhan3399/g' {} +
+
+
+grep -R "ruhan3399" --include="*.y*ml" .
+
+cd application
+
+% docker buildx build --platform linux/amd64 -t ruhan3399/demoservice-a:v --push service-a/                                                                               
+
+docker buildx build --platform linux/amd64 -t ruhan3399/demoservice-b:v --push service-b/
+
+kubectl rollout restart deployment service-a-deployment -n dev
+
+kubectl rollout restart deployment service-b-deployment -n dev
+
+kubectl get all -n dev
