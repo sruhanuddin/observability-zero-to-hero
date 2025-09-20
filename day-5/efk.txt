@@ -1,0 +1,60 @@
+eksctl create iamserviceaccount \
+    --name ebs-csi-controller-sa \
+    --namespace kube-system \
+    --cluster observability \
+    --role-name AmazonEKS_EBS_CSI_DriverRole \
+    --role-only \
+    --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+    --approve
+
+ARN=$(aws iam get-role --role-name AmazonEKS_EBS_CSI_DriverRole --query 'Role.Arn' --output text)
+
+eksctl create addon --cluster observability --name aws-ebs-csi-driver --version latest \
+    --service-account-role-arn $ARN --force
+
+kubectl create namespace logging
+
+helm repo add elastic https://helm.elastic.co
+
+helm install elasticsearch \
+ --set replicas=1 \
+ --set volumeClaimTemplate.storageClassName=gp2 \
+ --set persistence.labels.enabled=true elastic/elasticsearch -n logging
+
+kubectl patch svc elasticsearch-master -n logging -p '{"spec": {"type": "LoadBalancer"}}'
+
+
+# for username
+kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.username}' | base64 -d
+# for password
+kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
+oekOi01K3MMiWACt
+
+helm install kibana --set service.type=LoadBalancer elastic/kibana -n logging
+
+cd observability-zero-to-hero/day-5
+vi fluentbit-values.yaml  (update Http_Passwd in both [OUTPUT] sections)
+
+helm repo add fluent https://fluent.github.io/helm-charts
+helm install fluent-bit fluent/fluent-bit -f fluentbit-values.yaml -n logging
+
+kubectl get pods -n logging
+kubectl get svc -n logging
+
+kubectl create namespace dev
+cd ../day-4
+grep -R "abhishekf5" --include="*.y*ml" .
+find . -type f -name "*.y*ml" -exec sed -i '.bak' 's/abhishekf5/ruhan3399/g' {} +
+grep -R "abhishekf5" --include="*.y*ml" .
+grep -R "ruhan3399" --include="*.y*ml" .
+cd application
+sudo docker buildx build --platform linux/amd64 -t ruhan3399/demoservice-a:v --push service-a/
+sudo docker buildx build --platform linux/amd64 -t ruhan3399/demoservice-b:v --push service-b/
+cd ..
+kubectl apply -k kubernetes-manifest/
+kubectl get all -n dev
+
+kubectl logs <fluint_bit_pod> -n logging
+
+
+Go to kibana ui and create the view, give some name, put log pattern name and create the view
