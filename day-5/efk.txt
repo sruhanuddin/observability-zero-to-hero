@@ -21,9 +21,6 @@ helm install elasticsearch \
  --set volumeClaimTemplate.storageClassName=gp2 \
  --set persistence.labels.enabled=true elastic/elasticsearch -n logging
 
-kubectl patch svc elasticsearch-master -n logging -p '{"spec": {"type": "LoadBalancer"}}'
-
-
 # for username
 kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.username}' | base64 -d
 # for password
